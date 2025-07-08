@@ -9,7 +9,19 @@ export const signup = async (req, res) => {
         if (password.length < 6) {
                 return res.status(400).send('Password must be at least 6 characters long');
         }
-        
+        // validate username
+        if (username.length < 3 || username.length > 20) {
+            return res.status(400).send('Username must be between 3 and 20 characters long');
+        }
+        // validate email
+        if (!email || !email.includes('@')) {
+            return res.status(400).send('Invalid email address');
+        }
+        // validate first name and last name
+        if (firstName.length < 2 || firstName.length > 30) {
+            return res.status(400).send('First name must be between 2 and 30 characters long');
+        }
+
         const newEmail = new User.findOne({email: email});
         if (newEmail) {
             return res.status(400).send('Email already exists');
