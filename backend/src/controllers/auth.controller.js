@@ -1,8 +1,8 @@
 import bcrypt from "bcryptjs";
 import User from "../models/user.model.js";
-
+import { generateToken } from "../lib/utils.js";
 export const signup = async (req, res) => {
-    console.log('Signup request received:', req.body);
+    
     const { username, password, email, firstName, lastName } = req.body;
     try {
         // hash the password
@@ -22,13 +22,13 @@ export const signup = async (req, res) => {
             return res.status(400).send('First name must be between 2 and 30 characters long');
         }
 
-        const newEmail = new User.findOne({email: email});
-        if (newEmail) {
+        const existingEmail = await User.findOne({ email: email });
+        if (existingEmail) {
             return res.status(400).send('Email already exists');
         }
 
-        const newUserName = new User.findOne({username: username});
-        if (newUserName) {
+        const existingUsername = await User.findOne({ username: username });
+        if (existingUsername) {
             return res.status(400).send('Username already exists');
         }
 
@@ -48,14 +48,14 @@ export const signup = async (req, res) => {
             generateToken(newUser._id, res);
             await newUser.save();
             return res.status(201).json({ 
-                user: {
                     _id: newUser._id,
                     username: newUser.username,
                     email: newUser.email,
                     firstName: newUser.firstName,
                     lastName: newUser.lastName,
                     profilePicture: newUser.profilePicture,
-                }
+                    isAdmin: newUser.isAdmin || false,
+                    isVIP: newUser.isVIP || false,
              });
         } else {
             return res.status(400).json({message: 'User creation failed'});    
