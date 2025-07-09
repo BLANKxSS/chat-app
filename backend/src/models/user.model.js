@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true, match: /.+\@.+\..+/ },
     firstName: { type: String, required: true, minlength: 2, maxlength: 30 },
     lastName: { type: String, required: false, minlength: 2, maxlength: 30 },
+    phone : { type: String, required: true, minlength: 9,}, // Saudi format
     isAdmin: { type: Boolean, default: false },
     isVIP: { type: Boolean, default: false },
     profilePicture: { type: String, default: 'default.jpg' },

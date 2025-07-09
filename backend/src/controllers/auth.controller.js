@@ -3,7 +3,7 @@ import User from "../models/user.model.js";
 import { generateToken } from "../lib/utils.js";
 export const signup = async (req, res) => {
     
-    const { username, password, email, firstName, lastName } = req.body;
+    const { username, password, email, firstName, lastName, phone } = req.body;
     try {
         // hash the password
         if (password.length < 6) {
@@ -21,7 +21,10 @@ export const signup = async (req, res) => {
         if (firstName.length < 2 || firstName.length > 30) {
             return res.status(400).send('First name must be between 2 and 30 characters long');
         }
-
+        // validate phone number
+        if (!phone || phone.length < 9) {
+            return res.status(400).send('Phone number must be at least 9 characters long');
+        }
         const existingEmail = await User.findOne({ email: email });
         if (existingEmail) {
             return res.status(400).send('Email already exists');
@@ -41,6 +44,9 @@ export const signup = async (req, res) => {
             username,
             password: hashedPassword,
             email,
+            phone,
+            isAdmin: false, // default to false
+            isVIP: false, // default to false
             firstName,
             lastName,
         });
