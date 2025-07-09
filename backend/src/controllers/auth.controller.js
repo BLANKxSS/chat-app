@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import User from "../models/user.model.js";
 import { generateToken } from "../lib/utils.js";
+
 export const signup = async (req, res) => {
     
     const { username, password, email, firstName, lastName, phone } = req.body;
@@ -73,11 +74,81 @@ export const signup = async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 }
-export const login = (req, res) => {
-    // Handle user login logic here
-    res.send('Login Page');
+export const login = async (req, res) => {
+    const { username, password, email, phone } = req.body;
+    try {
+        const user = await User.findOne({
+            $or: [
+                { username },
+                { email },
+                { phone }
+            ]
+        });
+        // Check if user exists
+        console.log("user login in :", user.username);
+        if (!user) {
+            return res.status(404).json({ message: 'invalid credentials' });
+        }
+
+      const isAuthenticated = await bcrypt.compare(password, user.password);
+        // Check if password is correct
+        if (!isAuthenticated) {
+            return res.status(401).json({ message: 'invalid credentials' });
+        }
+        // Generate token and send response
+        generateToken(user._id, res);
+        return res.status(200).json({
+            _id: user._id,
+            username: user.username,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            profilePicture: user.profilePicture,
+            isAdmin: user.isAdmin || false,
+            isVIP: user.isVIP || false,
+        });
+    }
+    catch (error) {
+        console.log('Login error:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
 }
 export const logout = (req, res) => {
-    // Handle user logout logic here
-    res.send('Logout Page');
+    try {
+        // Handle user logout logic here
+        res.clearCookie('token'); // Clear the token cookie
+        res.status(200).json({ message: 'Logged out successfully' });
+    }   
+    catch (error) {
+        console.log('Logout error:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+}
+
+export const updateUserProfile = async (req, res) => {
+    const { userId, firstName, lastName, profilePicture } = req.body;
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        user.firstName = firstName || user.firstName;
+        user.lastName = lastName || user.lastName;
+        user.profilePicture = profilePicture || user.profilePicture;
+
+        await user.save();
+        res.status(200).json({
+            _id: user._id,
+            username: user.username,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            profilePicture: user.profilePicture,
+            isAdmin: user.isAdmin || false,
+            isVIP: user.isVIP || false,
+        });
+    } catch (error) {
+        console.log('Update profile error:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
 }
