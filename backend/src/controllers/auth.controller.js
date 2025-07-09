@@ -126,29 +126,64 @@ export const logout = (req, res) => {
 }
 
 export const updateUserProfile = async (req, res) => {
-    const { userId, firstName, lastName, profilePicture } = req.body;
-    try {
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        user.firstName = firstName || user.firstName;
-        user.lastName = lastName || user.lastName;
-        user.profilePicture = profilePicture || user.profilePicture;
+    // update user profile logic here wit profile picture upload
+    try {   
+        const { profilePicture} = req.body;
+        const userId = req.user._id; // Assuming user is authenticated and user ID is available in req.user
 
-        await user.save();
-        res.status(200).json({
-            _id: user._id,
-            username: user.username,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            profilePicture: user.profilePicture,
-            isAdmin: user.isAdmin || false,
-            isVIP: user.isVIP || false,
+        if (!profilePicture) {
+            return res.status(400).json({ message: 'Profile picture is required' });
+        }
+        // Validate the profile picture format 
+        const uploadResponse = await cloudinary.uploader.upload(profilePicture, {
+            folder: 'chat-app/profile-pictures',
+            width: 150,
+            height: 150,
+            crop: 'fill',
         });
+        // Update the user's profile picture in the database
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { profilePicture: uploadResponse.secure_url },
+            { new: true }
+        );
+        
+        res.status(200).json(updatedUser);
     } catch (error) {
-        console.log('Update profile error:', error);
-        res.status(500).json({ message: 'Internal Server Error' });
+        console.error('Error updating user profile:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+}
+
+export const checkAuth = (req, res) => {
+    // Check if user is authenticated
+    if (req.user) {
+        return res.status(200).json({ message: 'User is authenticated', user: req.user });
+    } else {
+        return res.status(401).json({ message: 'User is not authenticated' });
+    }
+}
+
+export const isAdmin = async (req, res) => {
+    // Check if user is an admin
+    const userId = req.user._id; // Assuming user is authenticated and user ID is available in req.user
+    const user = await User.findById(userId);
+    
+    if (user && user.isAdmin) {
+        return res.status(200).json({ message: 'User is an admin' });
+    } else {
+        return res.status(403).json({ message: 'User is not an admin' });
+    }
+}
+
+export const isVIP = async (req, res) => {
+    // Check if user is a VIP
+    const userId = req.user._id; // Assuming user is authenticated and user ID is available in req.user
+    const user = await User.findById(userId);
+    
+    if (user && user.isVIP) {
+        return res.status(200).json({ message: 'User is a VIP' });
+    } else {
+        return res.status(403).json({ message: 'User is not a VIP' });
     }
 }
