@@ -8,7 +8,8 @@ import dotenv from 'dotenv'
 import { connectToDatabase } from './lib/db.lib.js'
 // Importing cookie-parser for handling cookies
 import cookieParser from 'cookie-parser';
-
+// Importing message routes
+import messageRoutes from './routes/message.route.js'
 const app = express()
 const PORT = process.env.PORT || 1337
 
@@ -18,7 +19,7 @@ app.use(cookieParser()) // Middleware to parse cookies
 
 
 app.use("/api/auth", authRoutes)
-
+app.use("/api/message", messageRoutes)
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)
   connectToDatabase()
